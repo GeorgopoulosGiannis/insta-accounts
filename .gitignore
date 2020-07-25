@@ -1,2 +1,4 @@
 /assets/proxies-list.txt
-/assets/new-accounts-txt
+/assets/new-accounts.txt
+/assets/error-log.txt
+/node_modules*
