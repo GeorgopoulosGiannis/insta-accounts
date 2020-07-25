@@ -17,7 +17,6 @@ const RandomIdentity = async (country) => {
 	catch (e) {
 		console.error('Error while getting random identity from fakenamegenerator', e);
 	}
-
 }
 
 const choose = (choices) => {
