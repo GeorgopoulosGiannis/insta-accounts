@@ -1,41 +1,28 @@
 const cheerio = require('cheerio')
 const axios = require('axios')
 
-const RandomIdentity = async (country) =>{
-	let gender = choose(["male", "female"])
-	let url = "https://www.fakenamegenerator.com/gen-"+gender+"-us-"+country+".php";
-	const html = await axios.get(url);
-	const $ = await cheerio.load(html.data);
+const RandomIdentity = async (country) => {
+	try {
+		let gender = choose(["male", "female"])
+		let url = "https://www.fakenamegenerator.com/gen-" + gender + "-us-" + country + ".php";
+		const html = await axios.get(url);
+		const $ = await cheerio.load(html.data);
+		let identity = $('div[class=address]').find('h3').text();
+		let birthday = $($('div[class=extra]').find('dl[class=dl-horizontal]')[4], 'dd').text();
+		// first regex removes carriage return and second removes extra spaces
+		birthday = birthday.replace(/[\n\r]+/g, '').replace(/\s{2,10}/g, ' ');
 
-	// page = browser.get(URL)
-	// address_div = page.soup.find(
-	// "div",
-	// { "class": "address" }
-	// )
-	// completename = address_div.find(
-	// "h3"
-	// )
+		return { identity, gender, birthday }
+	}
+	catch (e) {
+		console.error('Error while getting random identity from fakenamegenerator', e);
+	}
 
-	// extra_div = page.soup.find(
-	// "div",
-	// { "class": "extra" }
-	// )
-
-	// all_dl = page.soup.find_all(
-	// "dl",
-	// {'class':'dl-horizontal'}
-	// )
-
-	// birthday = all_dl[5].find("dd").contents[0]
-	// logging.info("Birthday: {}".format(birthday))
-
-	// return(completename.contents[0],gender, birthday)
-	return $;
 }
 
-const choose = (choices)=> {
-  let index = Math.floor(Math.random() * choices.length);
-  return choices[index];
+const choose = (choices) => {
+	let index = Math.floor(Math.random() * choices.length);
+	return choices[index];
 }
 
-module.exports= RandomIdentity;
+module.exports = RandomIdentity;
