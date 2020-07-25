@@ -2,7 +2,7 @@ const config = require('./config')
 const RandomIdentity = require('./RandomIdentity')
 
 const NewAccount = async () => {
-	try{
+	try {
 		let account_info = {};
 		let { identity, gender, birthday } = await RandomIdentity(country = config['country'])
 		account_info['name'] = identity;
@@ -12,10 +12,10 @@ const NewAccount = async () => {
 		account_info['gender'] = gender;
 		account_info['birthday'] = birthday;
 		return account_info;
-	}catch(e){
-		console.error('Error while generating new account ',e);
+	} catch (e) {
+		console.error('Error while generating new account ', e);
 	}
-	
+
 }
 
 const generateEmail = (username) => {
@@ -33,6 +33,9 @@ const generateUsername = (identity) => {
 	//n regex remove spaces
 	name = identity.toLowerCase().replace(/\s/g, '');
 	newUsername = name + n
+	if (newUsername.length > 20) {
+		newUsername = newUsername.substring(0, 20)
+	}
 	return newUsername;
 }
 
