@@ -1,6 +1,7 @@
 const fs = require('fs');
-const puppeteer = require('puppeteer')
-const Config = require('./config')
+const puppeteer = require('puppeteer');
+const exec = require('child_process').exec;
+const Config = require('./config');
 const NewAccount = require('./accountGenerator');
 const { IgApiClient } = require("instagram-private-api");
 const { exception } = require('console');
@@ -13,6 +14,7 @@ process.on('unhandledRejection', (error, promise) => {
     console.log(' Oh Lord! We forgot to handle a promise rejection here: ', promise);
     console.log(' The error was: ', error);
 });
+
 
 const readProxies = () => {
     let proxyFileData = fs.readFileSync(PROXIES_FILE_PATH, 'utf8');
@@ -68,11 +70,8 @@ const handleError = async (err, proxyArray, newRandomAccount, proxyIndex) => {
 
 const start = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
     try {
-        //let { username, password, email, name } = newRandomAccount;
-        let username = 'journey9821';
-        let password = 'asdjh32vc!1'
-        let email = 'kostasgrigoriou6717@outlook.com'
-        let name = 'Kostas Grigoriou'
+        let { username, password, email, name } = newRandomAccount;
+        
 
         ig.state.generateDevice();
         if (proxyArray[proxyIndex]) {
@@ -102,39 +101,66 @@ const start = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
         handleError(err, proxyArray, newRandomAccount, proxyIndex + 1)
     }
 }
-const startPuppeteer = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
+const startPuppeteer = async (newRandomAccount) => {
     const browser = await puppeteer.launch({
         headless: false,
         args: [
-            '--proxy-server=socks5://127.0.0.1:9150'
+            '--proxy-server=socks5://127.0.0.1:9050'
         ],
     });
     const page = await browser.newPage();
     await page.goto(CREATE_ACCOUNT_URL).catch((err) => {
+        exec('(echo authenticate \'""\'; echo signal newnym; echo quit) | nc localhost 9051', (error, stdout, stderr) => {
+            if (stdout.match(/250/g).length === 3) {
+                console.log('Success: The IP Address has been changed.');
+            } else {
+                console.log('Error: A problem occured while attempting to change the IP Address.');
+            }
+        })
         browser.close();
-        startPuppeteer(proxyArray, newRandomAccount, proxyIndex + 1)
+        //startPuppeteer(proxyArray, newRandomAccount, proxyIndex + 1)
     });
-    await page.waitForSelector('input[name="emailOrPhone"]')
     let { username, password, email, name } = newRandomAccount;
+    await page.waitForSelector('input[name="emailOrPhone"]')
     await page.type('input[name="emailOrPhone"]', email)
     await page.type('input[name="fullName"]', name)
     await page.type('input[name="username"]', username)
     await page.type('input[name="password"]', password)
     await page.click('button[type=submit]')
-    await page.type('select[title=Month:]')
+    await page.waitForSelector('select[title="Month:"]')
+
+    await page.click('select[title="Month:"]')
+    await page.select('select[title="Month:"]','5')
+
+    await page.click('select[title="Day:"]')
+    await page.select('select[title="Day:"]','15')
+
+    await page.click('select[title="Year:"]')
+    await page.select('select[title="Year:"]','1980')
+    
+    await page.click('button[type="button"]')
+    await page.waitFor(4000)
+    await page.waitForSelector('div[role="presentation"]')
+    await page.evaluate(() => {
+        console.log('inside evaluate')
+        return document.querySelector('svg[aria-label="Close"]');
+     });
+    await page.click['svg[aria-label="Close"]']
+    await page.click('button[type="button"]')
+    console.log(page)
 }
 
 
 const init = async () => {
     try {
-        let proxyArray = readProxies();
-        let newRandomAccount = await NewAccount().catch((err) => {
+       let newRandomAccount = await NewAccount().catch((err) => {
             console.log('ERROR from new accounts', err);
         });
         if (Config.bot_type == 2) {
+            let proxyArray = readProxies();
             start(proxyArray, newRandomAccount);
         } else {
-            startPuppeteer(proxyArray, newRandomAccount)
+            startPuppeteer(newRandomAccount)
         }
 
     } catch (e) {
