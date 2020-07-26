@@ -13,6 +13,7 @@
     "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
     "instagram-private-api": "^1.41.0",
+    "puppeteer": "^5.2.1",
     "requests": "^0.3.0",
     "why-is-node-running": "^2.2.0"
   }

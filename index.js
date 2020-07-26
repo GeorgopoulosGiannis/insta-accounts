@@ -1,10 +1,13 @@
 const fs = require('fs');
+const puppeteer = require('puppeteer')
+const Config = require('./config')
 const NewAccount = require('./accountGenerator');
 const { IgApiClient } = require("instagram-private-api");
+const { exception } = require('console');
 const PROXIES_FILE_PATH = './assets/proxies-list.txt';
 const NEW_ACCOUNTS_FILE_PATH = './assets/new-accounts.txt';
 const ERROR_LOG_FILE_PATH = './assets/error-log.txt';
-
+const CREATE_ACCOUNT_URL = 'https://www.instagram.com/accounts/emailsignup/'
 
 process.on('unhandledRejection', (error, promise) => {
     console.log(' Oh Lord! We forgot to handle a promise rejection here: ', promise);
@@ -16,15 +19,10 @@ const readProxies = () => {
     proxyArray = proxyFileData.split(/\r?\n/);
     return proxyArray;
 }
-const writeUsedProxies = (proxyArray) => {
-    let file = fs.createWriteStream(PROXIES_FILE_PATH);
-    file.on('error', function (err) { console.log('ERRROR WRITING FILE', err) });
-    proxyArray.forEach(function (proxy) {
-        if (proxy.indexOf(':used') > -1) {
-            file.write(proxy + '\n');
-        }
-    });
-    file.end();
+const deleteProxiesFile = (proxyArray) => {
+    fs.unlink(PROXIES_FILE_PATH, function (err) {
+        console.log(err)
+    })
 }
 
 const writeNewAccount = (account, res) => {
@@ -42,7 +40,7 @@ const writeNewAccount = (account, res) => {
     }
 }
 const writeErrorLog = (message, code, body) => {
-    fs.appendFileSync(ERROR_LOG_FILE_PATH, message + ' ' + code + '-' + body + '\n', function (err) {
+    fs.appendFileSync(ERROR_LOG_FILE_PATH, message + ' ' + code + '-' + body + '----' + new Date().toDateString() + '\n', function (err) {
         if (err) throw err;
         console.log('saved error')
     });
@@ -70,7 +68,12 @@ const handleError = async (err, proxyArray, newRandomAccount, proxyIndex) => {
 
 const start = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
     try {
-        let { username, password, email, name } = newRandomAccount;
+        //let { username, password, email, name } = newRandomAccount;
+        let username = 'journey9821';
+        let password = 'asdjh32vc!1'
+        let email = 'kostasgrigoriou6717@outlook.com'
+        let name = 'Kostas Grigoriou'
+
         ig.state.generateDevice();
         if (proxyArray[proxyIndex]) {
             ig.state.proxyUrl = "http://" + proxyArray[proxyIndex];
@@ -87,29 +90,47 @@ const start = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
                     handleError(err, proxyArray, newRandomAccount, proxyIndex + 1)
                 });
                 start(proxyArray, newRandomAccount, proxyIndex + 1);
-                console.log('SUCCESS CREATE')
             }).catch((err) => {
                 console.log('ERROR FROM CREATE ACCOUNT', err)
                 handleError(err, proxyArray, newRandomAccount, proxyIndex + 1)
             })
         } else {
-            console.log('writeUsedProxies')
-            writeUsedProxies(proxyArray);
+            console.log('delete proxies')
+            deleteProxiesFile(proxyArray);
         }
-
     } catch (e) {
         handleError(err, proxyArray, newRandomAccount, proxyIndex + 1)
     }
+}
+const startPuppeteer = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            '--proxy-server=socks5://' + proxyArray[proxyIndex]
+        ],
+    });
+    const page = await browser.newPage();
+    await page.goto(CREATE_ACCOUNT_URL).catch((err) => {
+        browser.close();
+        startPuppeteer(proxyArray, newRandomAccount, proxyIndex + 1)
+    });
+    await page.waitForSelector('input[name="username"]')
 }
 
 
 const init = async () => {
     try {
-        let proxyArray = readProxies();
+        //let proxyArray = readProxies();
+        let proxyArray =['--proxy-server=socks5://localhost:9051']
         let newRandomAccount = await NewAccount().catch((err) => {
             console.log('ERROR from new accounts', err);
         });
-        start(proxyArray, newRandomAccount);
+        if (Config.bot_type == 2) {
+            start(proxyArray, newRandomAccount);
+        } else {
+            startPuppeteer(proxyArray, newRandomAccount)
+        }
+
     } catch (e) {
         console.log('init error', e)
     }
