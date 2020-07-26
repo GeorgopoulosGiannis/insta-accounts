@@ -106,7 +106,7 @@ const startPuppeteer = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
     const browser = await puppeteer.launch({
         headless: false,
         args: [
-            '--proxy-server=socks5://' + proxyArray[proxyIndex]
+            '--proxy-server=socks5://127.0.0.1:9150'
         ],
     });
     const page = await browser.newPage();
@@ -114,14 +114,20 @@ const startPuppeteer = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
         browser.close();
         startPuppeteer(proxyArray, newRandomAccount, proxyIndex + 1)
     });
-    await page.waitForSelector('input[name="username"]')
+    await page.waitForSelector('input[name="emailOrPhone"]')
+    let { username, password, email, name } = newRandomAccount;
+    await page.type('input[name="emailOrPhone"]', email)
+    await page.type('input[name="fullName"]', name)
+    await page.type('input[name="username"]', username)
+    await page.type('input[name="password"]', password)
+    await page.click('button[type=submit]')
+    await page.type('select[title=Month:]')
 }
 
 
 const init = async () => {
     try {
-        //let proxyArray = readProxies();
-        let proxyArray =['--proxy-server=socks5://localhost:9051']
+        let proxyArray = readProxies();
         let newRandomAccount = await NewAccount().catch((err) => {
             console.log('ERROR from new accounts', err);
         });
