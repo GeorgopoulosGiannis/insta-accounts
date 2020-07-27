@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const exec = require('child_process').exec;
 const NewAccount = require('../helpers/accountGenerator');
-const { exception } = require('console');
+const {CREATE_ACCOUNT_URL} = require('../helpers/CONSTANTS');
 
 
 const start = async (newRandomAccount = null) => {
@@ -33,7 +33,7 @@ const launchPuppeteerBrowser = async ()=>{
         });
         return browser;
     }catch(e){
-        throw new exception(e.message);
+        throw e;
     }
     
 }
@@ -42,7 +42,7 @@ const getNewPage = async (browser)=>{
         const page = await browser.newPage();
         return page;
      }catch(e){
-        throw new exception(e.message);
+        throw e;
     }
 }
 
@@ -60,7 +60,7 @@ const navigateToInstagramPage = async (page)=>{
         });
         return true;
     }catch(e){
-        throw new exception(e.message);
+        throw e;
     }
     
 }
@@ -75,7 +75,7 @@ const fillSignupInfo = async (page,{ username, password, email, name })=>{
         return true;
 
     } catch(e){
-        throw new exception(e.message);
+        throw e;
     }
 }
 
@@ -96,7 +96,7 @@ const fillBirthdayPage = async (page)=>{
         await page.waitFor(4000)
         return true;
     } catch(e){
-        throw new exception(e.message);
+        throw e;
     }
    
 }
@@ -120,7 +120,7 @@ const closePopupConfirmation = async(page)=>{
         return true;
     
     } catch(e){
-        throw new exception(e.message);
+        throw e;
     }
 }
 

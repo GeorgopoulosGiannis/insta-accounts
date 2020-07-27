@@ -1,4 +1,5 @@
 const fs = require('fs');
+const {PROXIES_FILE_PATH,ERROR_LOG_FILE_PATH,NEW_ACCOUNTS_FILE_PATH} = require('../helpers/CONSTANTS');
 
 const deleteProxiesFile = (proxyArray) => {
     fs.unlink(PROXIES_FILE_PATH, function (err) {

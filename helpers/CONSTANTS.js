@@ -1,6 +1,6 @@
-const PROXIES_FILE_PATH = './assets/proxies-list.txt';
-const NEW_ACCOUNTS_FILE_PATH = './assets/new-accounts.txt';
-const ERROR_LOG_FILE_PATH = './assets/error-log.txt';
+const PROXIES_FILE_PATH = '../assets/proxies-list.txt';
+const NEW_ACCOUNTS_FILE_PATH = '../assets/new-accounts.txt';
+const ERROR_LOG_FILE_PATH = '../assets/error-log.txt';
 const CREATE_ACCOUNT_URL = 'https://www.instagram.com/accounts/emailsignup/'
 
 
