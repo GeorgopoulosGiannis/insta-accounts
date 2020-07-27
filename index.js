@@ -15,6 +15,23 @@ process.on('unhandledRejection', (error, promise) => {
     console.log(' The error was: ', error);
 });
 
+const init = async () => {
+    try {
+       let newRandomAccount = await NewAccount().catch((err) => {
+            console.log('ERROR from new accounts', err);
+        });
+        if (Config.bot_type == 2) {
+            let proxyArray = readProxies();
+            start(proxyArray, newRandomAccount);
+        } else {
+            startPuppeteer(newRandomAccount)
+        }
+
+    } catch (e) {
+        console.log('init error', e)
+    }
+
+};
 
 const readProxies = () => {
     let proxyFileData = fs.readFileSync(PROXIES_FILE_PATH, 'utf8');
@@ -102,13 +119,35 @@ const start = async (proxyArray, newRandomAccount, proxyIndex = 0) => {
     }
 }
 const startPuppeteer = async (newRandomAccount) => {
+    const instagramPage = firstStep(newRandomAccount);
+    
+}
+
+const firstStep = async (newRandomAccount)=>{
+    const browser = await launchPuppeteerBrowser();
+    const page = await getNewPage(browser);
+    await navigateToInstagramPage(page);
+    await fillSignupInfo(page,newRandomAccount);
+    await fillBirthdayPage(page);
+    await closePopupConfirmation(page);
+    return page;
+}
+
+const launchPuppeteerBrowser = async ()=>{
     const browser = await puppeteer.launch({
         headless: false,
         args: [
             '--proxy-server=socks5://127.0.0.1:9050'
         ],
     });
+    return browser;
+}
+const getNewPage = async (browser)=>{
     const page = await browser.newPage();
+    return page;
+}
+
+const navigateToInstagramPage = async (page)=>{
     await page.goto(CREATE_ACCOUNT_URL).catch((err) => {
         exec('(echo authenticate \'""\'; echo signal newnym; echo quit) | nc localhost 9051', (error, stdout, stderr) => {
             if (stdout.match(/250/g).length === 3) {
@@ -118,15 +157,18 @@ const startPuppeteer = async (newRandomAccount) => {
             }
         })
         browser.close();
-        //startPuppeteer(proxyArray, newRandomAccount, proxyIndex + 1)
     });
-    let { username, password, email, name } = newRandomAccount;
+}
+const fillSignupInfo = async (page,{ username, password, email, name })=>{
     await page.waitForSelector('input[name="emailOrPhone"]')
     await page.type('input[name="emailOrPhone"]', email)
     await page.type('input[name="fullName"]', name)
     await page.type('input[name="username"]', username)
     await page.type('input[name="password"]', password)
     await page.click('button[type=submit]')
+}
+
+const fillBirthdayPage = async (page)=>{
     await page.waitForSelector('select[title="Month:"]')
 
     await page.click('select[title="Month:"]')
@@ -140,34 +182,24 @@ const startPuppeteer = async (newRandomAccount) => {
     
     await page.click('button[type="button"]')
     await page.waitFor(4000)
-    await page.waitForSelector('div[role="presentation"]')
-    await page.evaluate(() => {
-        console.log('inside evaluate')
-        return document.querySelector('svg[aria-label="Close"]');
-     });
-    await page.click['svg[aria-label="Close"]']
-    await page.click('button[type="button"]')
-    console.log(page)
 }
 
-
-const init = async () => {
-    try {
-       let newRandomAccount = await NewAccount().catch((err) => {
-            console.log('ERROR from new accounts', err);
-        });
-        if (Config.bot_type == 2) {
-            let proxyArray = readProxies();
-            start(proxyArray, newRandomAccount);
-        } else {
-            startPuppeteer(newRandomAccount)
+const closePopupConfirmation = async(page)=>{
+    await page.waitForSelector('div[role="presentation"]')
+    await page.evaluate(() => {
+        document.querySelector('svg[aria-label="Close"]').parentElement.parentElement.click();
+        for(var i=0;i<document.querySelectorAll('button[type="button"]').lenght;i++){
+            console.log(document.querySelectorAll('button[type="button"]')[i].textContent)
         }
-
-    } catch (e) {
-        console.log('init error', e)
-    }
-
-};
+        setTimeout(function(){
+            for(let l =0;l<document.querySelectorAll('button[type="button"]').length;l++){
+                if(document.querySelectorAll('button[type="button"]')[l].textContent =="Next"){
+                    document.querySelectorAll('button[type="button"]')[l].click()}
+                }
+            },2000)
+     });
+    await page.waitForSelector('input[aria-label="Confirmation Code"]');
+}
 
 const ig = new IgApiClient();
 init();
